@@ -1,0 +1,20 @@
+name: Guard
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - run: >-
+          gh run list -w ci.yml -R "$GITHUB_REPOSITORY"
+          --limit 1 --json status -q '.[0].status' 2>/dev/null
+          | grep -qE 'progress|queued'
+          || gh workflow run ci.yml -R "$GITHUB_REPOSITORY"

